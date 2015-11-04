@@ -1,0 +1,57 @@
+# -*- coding: utf-8 -*-
+from django.core.urlresolvers import resolve
+
+from {{ class_base_module }} import {{ class_base }}
+
+
+def from_none(exc):
+    """Emulates raise ... from None (PEP 409) on older Python-s
+    """
+    try:
+        exc.__cause__ = None
+    except AttributeError:
+        exc.__context__ = None
+    return exc
+
+
+{% for group in api %}
+    {% for resource in group %}
+
+class {{ resource.name | symbolize }}Tests({{ class_base }}):
+{% if include_comments %}
+    """
+    {{ group.name }}
+    {{ underline(group.name, '=') }}
+
+    {{ group.description }}
+
+    {{ resource.name }}
+    {{ underline(resource.name, '-') }}
+
+    {{ resource.description }}
+
+    """
+        {% endif %}
+        {% for action in resource %}
+    def test_{{ action.name | symbolize }}(self):
+            {% if include_comments %}
+        """
+        ### {{ action.name }}
+
+        {{ action.description }}
+        """
+        url = resolve("{{ action.uri }}")
+        print("%s.%s: %d requests" % (
+            url.func.cls.__module__, url.func.cls.__name__, {{ action | length }}))
+                {% for request, responses in action %}
+        response = self.client.get("{{ action.uri }}", format="{{ request.media_type[1] }}")
+        try:
+             self.assertIn(response.code, ({% for r in responses %}{{ r.http_code }},{% endfor %}))
+        except AssertionError as e:
+             print(response)
+             raise from_none(e)
+                {% endfor %}
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+{% endfor %}
