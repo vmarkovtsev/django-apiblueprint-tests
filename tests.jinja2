@@ -12,33 +12,45 @@ def from_none(exc):
     except AttributeError:
         exc.__context__ = None
     return exc
-
-
 {% for group in api %}
     {% for resource in group %}
+        {% if not (resource | length) %}
+        {% continue %}
+        {% endif %}
+
 
 class {{ resource.name | symbolize }}Tests({{ class_base }}):
 {% if include_comments %}
     """
+    {% if group.name %}
     {{ group.name }}
     {{ underline(group.name, '=') }}
+    {% endif %}
+    {% if group.description %}
 
-    {{ group.description }}
+    {{ group.description | html2text(4) }}
+    {% endif %}
+    {% if resource.name %}
 
     {{ resource.name }}
     {{ underline(resource.name, '-') }}
+    {% endif %}
+    {% if resource.description %}
 
-    {{ resource.description }}
-
+    {{ resource.description | html2text(4) }}
+    {% endif %}
     """
         {% endif %}
         {% for action in resource %}
+
     def test_{{ action.name | symbolize }}(self):
             {% if include_comments %}
         """
-        ### {{ action.name }}
+        {{ action.name }}
+        {% if action.description %}
 
-        {{ action.description }}
+        {{ action.description | html2text(8) }}
+        {% endif %}
         """
         url = resolve("{{ action.uri }}")
         print("%s.%s: %d requests" % (
@@ -46,7 +58,7 @@ class {{ resource.name | symbolize }}Tests({{ class_base }}):
                 {% for request, responses in action %}
         response = self.client.get("{{ action.uri }}", format="{{ request.media_type[1] }}")
         try:
-             self.assertIn(response.code, ({% for r in responses %}{{ r.http_code }},{% endfor %}))
+             self.assertIn(response.code, ({% for r in responses %}{{ r }},{% endfor %}))
         except AssertionError as e:
              print(response)
              raise from_none(e)
