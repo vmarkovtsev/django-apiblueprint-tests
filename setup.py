@@ -9,7 +9,7 @@ def parse_requirements():
 
 
 setup(
-    name="plueprint",
+    name="django-apiblueprint-tests",
     description="Django REST framework tests generator which is based on API "
                 "Blueprint (https://apiblueprint.org/) documents.",
     version="0.1.0",
